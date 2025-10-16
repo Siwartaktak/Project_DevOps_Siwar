@@ -46,10 +46,8 @@ pipeline {
 
         stage('Publish to Nexus') {
             steps {
-                // Securely pass Nexus credentials using Jenkins Credentials
-                withCredentials([usernamePassword(credentialsId: 'nexus-admin', usernameVariable: 'NEXUS_USER', passwordVariable: 'NEXUS_PASS')]) {
-                    bat "mvn deploy -DskipTests -Dnexus.username=%NEXUS_USER% -Dnexus.password=%NEXUS_PASS%"
-                }
+                bat 'mvn deploy -s settings.xml -DskipTests'
+                
             }
         }
 
