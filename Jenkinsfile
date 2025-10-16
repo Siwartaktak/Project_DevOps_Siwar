@@ -10,39 +10,39 @@ pipeline {
         
         stage('Maven Clean') {
             steps {
-                sh 'mvn clean'
+                bat 'mvn clean'
             }
         }
         
         stage('Artifact Construction') {
             steps {
-                sh 'mvn package'
+                bat 'mvn package'
             }
         }
         
         stage('Unit Tests') {
             steps {
-                sh 'mvn test'
+                bat 'mvn test'
             }
         }
         
         stage('Publish to Nexus') {
             steps {
-                sh 'mvn deploy'
+                bat 'mvn deploy'
             }
         }
         
         stage('Build Docker Image') {
             steps {
-                sh 'docker build -t gestion-station-skii:latest .'
+                bat 'docker build -t gestion-station-skii:latest .'
             }
         }
         
         stage('Deploy Docker Image') {
             steps {
-                sh '''
-                    docker stop ski-app || true
-                    docker rm ski-app || true
+                bat '''
+                    docker stop ski-app 2>nul || echo Container not running
+                    docker rm ski-app 2>nul || echo Container not found
                     docker run -d --name ski-app -p 8080:8080 gestion-station-skii:latest
                 '''
             }
@@ -50,7 +50,7 @@ pipeline {
         
         stage('Update Kubernetes') {
             steps {
-                sh 'kubectl apply -f k8s/'
+                bat 'kubectl apply -f k8s/'
             }
         }
     }
