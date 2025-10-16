@@ -14,7 +14,7 @@ pipeline {
                     docker stop test-mysql 2>nul || echo MySQL container not running
                     docker rm test-mysql 2>nul || echo MySQL container does not exist
                     docker run -d --name test-mysql -e MYSQL_ALLOW_EMPTY_PASSWORD=yes -e MYSQL_DATABASE=skidb -p 3307:3306 mysql:8.0
-                    timeout /t 40
+                    powershell -Command "Start-Sleep -Seconds 40"
                     echo MySQL container started and ready
                 '''
             }
