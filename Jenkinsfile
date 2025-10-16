@@ -14,7 +14,7 @@ pipeline {
                     docker stop test-mysql 2>nul || echo MySQL container not running
                     docker rm test-mysql 2>nul || echo MySQL container does not exist
                     docker run -d --name test-mysql -e MYSQL_ALLOW_EMPTY_PASSWORD=yes -e MYSQL_DATABASE=skidb -p 3307:3306 mysql:latest
-                    powershell -Command "Start-Sleep -Seconds 40"
+                    sleep 40
                     echo MySQL container started and ready
                 '''
             }
@@ -60,8 +60,8 @@ pipeline {
         stage('Deploy Docker Image') {
             steps {
                 sh '''
-                    docker stop ski-app 2>nul || echo Container not running
-                    docker rm ski-app 2>nul || echo Container not found
+                    docker stop ski-app 2>/dev/null || echo Container not running
+                    docker rm ski-app 2>/dev/null || echo Container not found
                     docker run -d --name ski-app -p 8080:8080 gestion-station-skii:latest
                 '''
             }
@@ -76,8 +76,8 @@ pipeline {
 
     post {
         always {
-            sh 'docker stop test-mysql 2>nul || echo MySQL cleanup done'
-            sh 'docker rm test-mysql 2>nul || echo MySQL cleanup done'
+            sh 'docker stop test-mysql 2>/dev/null || echo MySQL cleanup done'
+            sh 'docker rm test-mysql 2>/dev/null || echo MySQL cleanup done'
             echo 'Pipeline finished!'
         }
         success {
