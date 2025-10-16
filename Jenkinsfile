@@ -8,15 +8,27 @@ pipeline {
             }
         }
         
+        stage('Setup MySQL Container') {
+            steps {
+                bat '''
+                    docker stop test-mysql 2>nul || echo MySQL container not running
+                    docker rm test-mysql 2>nul || echo MySQL container does not exist
+                    docker run -d --name test-mysql -e MYSQL_ALLOW_EMPTY_PASSWORD=yes -e MYSQL_DATABASE=skidb -p 3306:3306 mysql:8.0
+                    timeout /t 40 /nobreak
+                    echo MySQL container started and ready
+                '''
+            }
+        }
+        
         stage('Maven Clean') {
             steps {
                 bat 'mvn clean'
             }
         }
         
-        stage('Artifact Construction') {
+        stage('Compile') {
             steps {
-                bat 'mvn package'
+                bat 'mvn compile'
             }
         }
         
@@ -26,9 +38,15 @@ pipeline {
             }
         }
         
+        stage('Artifact Construction') {
+            steps {
+                bat 'mvn package -DskipTests'
+            }
+        }
+        
         stage('Publish to Nexus') {
             steps {
-                bat 'mvn deploy'
+                bat 'mvn deploy -DskipTests'
             }
         }
         
@@ -56,14 +74,16 @@ pipeline {
     }
     
     post {
+        always {
+            bat 'docker stop test-mysql 2>nul || echo MySQL cleanup done'
+            bat 'docker rm test-mysql 2>nul || echo MySQL cleanup done'
+            echo 'Pipeline finished!'
+        }
         success {
             echo 'Pipeline completed successfully!'
         }
         failure {
             echo 'Pipeline failed!'
-        }
-        always {
-            echo 'Pipeline finished!'
         }
     }
 }
