@@ -10,7 +10,7 @@ pipeline {
 
         stage('Setup MySQL Container') {
             steps {
-                bat '''
+                sh '''
                     docker stop test-mysql 2>nul || echo MySQL container not running
                     docker rm test-mysql 2>nul || echo MySQL container does not exist
                     docker run -d --name test-mysql -e MYSQL_ALLOW_EMPTY_PASSWORD=yes -e MYSQL_DATABASE=skidb -p 3307:3306 mysql:latest
@@ -22,44 +22,44 @@ pipeline {
 
         stage('Maven Clean') {
             steps {
-                bat 'mvn clean'
+                sh 'mvn clean'
             }
         }
 
         stage('Compile') {
             steps {
-                bat 'mvn compile'
+                sh 'mvn compile'
             }
         }
 
         stage('Unit Tests') {
             steps {
-                bat 'mvn test -Dspring.datasource.url=jdbc:mysql://localhost:3307/skidb?createDatabaseIfNotExist=true'
+                sh 'mvn test -Dspring.datasource.url=jdbc:mysql://localhost:3307/skidb?createDatabaseIfNotExist=true'
             }
         }
 
         stage('Artifact Construction') {
             steps {
-                bat 'mvn package -DskipTests'
+                sh 'mvn package -DskipTests'
             }
         }
 
         stage('Publish to Nexus') {
             steps {
-                bat 'mvn deploy -s settings.xml -DskipTests'
+                sh 'mvn deploy -s settings.xml -DskipTests'
                 
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                bat 'docker build -t gestion-station-skii:latest .'
+                sh 'docker build -t gestion-station-skii:latest .'
             }
         }
 
         stage('Deploy Docker Image') {
             steps {
-                bat '''
+                sh '''
                     docker stop ski-app 2>nul || echo Container not running
                     docker rm ski-app 2>nul || echo Container not found
                     docker run -d --name ski-app -p 8080:8080 gestion-station-skii:latest
@@ -69,15 +69,15 @@ pipeline {
 
         stage('Update Kubernetes') {
             steps {
-                bat 'kubectl apply -f k8s/'
+                sh 'kubectl apply -f k8s/'
             }
         }
     }
 
     post {
         always {
-            bat 'docker stop test-mysql 2>nul || echo MySQL cleanup done'
-            bat 'docker rm test-mysql 2>nul || echo MySQL cleanup done'
+            sh 'docker stop test-mysql 2>nul || echo MySQL cleanup done'
+            sh 'docker rm test-mysql 2>nul || echo MySQL cleanup done'
             echo 'Pipeline finished!'
         }
         success {
