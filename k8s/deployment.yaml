@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ski-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ski-app
+  template:
+    metadata:
+      labels:
+        app: ski-app
+    spec:
+      containers:
+      - name: ski-app
+        image: siwaar/gestion-station-skii:latest
+        ports:
+        - containerPort: 8080
