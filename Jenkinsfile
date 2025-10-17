@@ -3,11 +3,11 @@ pipeline {
 
     environment {
         MYSQL_CONTAINER = 'test-mysql'
-        MYSQL_PORT = '3307'
         MYSQL_DB = 'skidb'
         APP_CONTAINER = 'ski-app'
         APP_IMAGE = 'gestion-station-skii:latest'
         GIT_URL = 'https://github.com/Siwartaktak/Project_DevOps_Siwar.git'
+        NETWORK_NAME = 'mynetwork'
     }
 
     stages {
@@ -18,21 +18,32 @@ pipeline {
             }
         }
 
+        stage('Setup Docker Network') {
+            steps {
+                echo 'Creating Docker network if not exists...'
+                sh '''
+                    docker network inspect ${NETWORK_NAME} >/dev/null 2>&1 || \
+                    docker network create ${NETWORK_NAME}
+                '''
+            }
+        }
+
         stage('Setup MySQL Container') {
             steps {
                 echo 'Setting up MySQL container...'
                 sh '''
                     docker stop ${MYSQL_CONTAINER} 2>/dev/null || echo "MySQL container not running"
                     docker rm ${MYSQL_CONTAINER} 2>/dev/null || echo "MySQL container does not exist"
-                    docker run -d --name ${MYSQL_CONTAINER} \
+
+                    docker run -d --name ${MYSQL_CONTAINER} --network ${NETWORK_NAME} \
                         -e MYSQL_ALLOW_EMPTY_PASSWORD=yes \
                         -e MYSQL_DATABASE=${MYSQL_DB} \
-                        -p ${MYSQL_PORT}:3306 mysql:latest
+                        mysql:latest
 
                     echo "Waiting for MySQL to be ready..."
                     MAX_ATTEMPTS=30
                     for i in $(seq 1 $MAX_ATTEMPTS); do
-                        if docker exec ${MYSQL_CONTAINER} mysql -h127.0.0.1 -uroot -e "SELECT 1" &> /dev/null; then
+                        if docker exec ${MYSQL_CONTAINER} mysqladmin ping -h"127.0.0.1" --silent; then
                             echo "✅ MySQL is ready after $i attempts!"
                             break
                         fi
@@ -40,7 +51,7 @@ pipeline {
                         sleep 5
                     done
 
-                    if ! docker exec ${MYSQL_CONTAINER} mysql -h127.0.0.1 -uroot -e "SELECT 1" &> /dev/null; then
+                    if ! docker exec ${MYSQL_CONTAINER} mysqladmin ping -h"127.0.0.1" --silent; then
                         echo "❌ MySQL did not become ready in time."
                         docker logs ${MYSQL_CONTAINER}
                         exit 1
@@ -66,8 +77,8 @@ pipeline {
         stage('Unit Tests') {
             steps {
                 echo 'Running unit tests...'
-                // Use explicit localhost:3307 for the test DB URL
-                sh 'mvn test -Dspring.datasource.url=jdbc:mysql://127.0.0.1:${MYSQL_PORT}/${MYSQL_DB}?createDatabaseIfNotExist=true'
+                // Use the container hostname within the Docker network
+                sh 'mvn test -Dspring.datasource.url=jdbc:mysql://test-mysql:3306/${MYSQL_DB}?createDatabaseIfNotExist=true'
             }
         }
 
@@ -98,7 +109,9 @@ pipeline {
                 sh '''
                     docker stop ${APP_CONTAINER} 2>/dev/null || echo "Container not running"
                     docker rm ${APP_CONTAINER} 2>/dev/null || echo "Container not found"
-                    docker run -d --name ${APP_CONTAINER} -p 8089:8080 ${APP_IMAGE}
+
+                    docker run -d --name ${APP_CONTAINER} --network ${NETWORK_NAME} \
+                        -p 8089:8080 ${APP_IMAGE}
                 '''
             }
         }
