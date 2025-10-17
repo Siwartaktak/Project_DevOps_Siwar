@@ -7,6 +7,9 @@ pipeline {
         APP_CONTAINER = 'ski-app'
         APP_IMAGE = 'gestion-station-skii:latest'
         GIT_URL = 'https://github.com/Siwartaktak/Project_DevOps_Siwar.git'
+        DOCKER_HUB_USERNAME = 'siwaar'
+        DOCKER_HUB_PASSWORD = 'TestDock2!'
+        DOCKER_HUB_REPO = 'siwaar/gestion-station-skii:latest'
     }
 
     stages {
@@ -90,6 +93,17 @@ pipeline {
             steps {
                 echo '🐳 Building Docker image...'
                 sh 'docker build -t ${APP_IMAGE} .'
+            }
+        }
+
+        stage('Push to Docker Hub') {
+            steps {
+                echo '📤 Pushing Docker image to Docker Hub...'
+                sh '''
+                    echo "$DOCKER_HUB_PASSWORD" | docker login -u "$DOCKER_HUB_USERNAME" --password-stdin
+                    docker tag ${APP_IMAGE} ${DOCKER_HUB_REPO}
+                    docker push ${DOCKER_HUB_REPO}
+                '''
             }
         }
 
