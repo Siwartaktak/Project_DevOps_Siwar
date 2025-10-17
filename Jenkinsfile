@@ -1,10 +1,5 @@
 pipeline {
-    agent {
-        docker {
-            image 'lachlanevenson/k8s-kubectl:latest' // contains kubectl
-            args '-v /var/run/docker.sock:/var/run/docker.sock' // allows Docker commands
-        }
-    }
+    agent any
 
     environment {
         MYSQL_CONTAINER = 'ski-mysql'
