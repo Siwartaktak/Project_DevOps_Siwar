@@ -68,7 +68,8 @@ pipeline {
         stage('Unit Tests') {
             steps {
                 echo '🧪 Running unit tests...'
-                sh 'mvn test -Dspring.datasource.url=jdbc:mysql://127.0.0.1:${MYSQL_PORT}/${MYSQL_DB}?createDatabaseIfNotExist=true'
+                sh 'mvn test -Dspring.datasource.url=jdbc:mysql://ski-mysql:3306/${MYSQL_DB}?createDatabaseIfNotExist=true'
+
             }
         }
 
