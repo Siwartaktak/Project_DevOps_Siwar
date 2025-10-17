@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        MYSQL_CONTAINER = 'test-mysql'
+        MYSQL_CONTAINER = 'ski-mysql'
         MYSQL_DB = 'skidb'
         APP_CONTAINER = 'ski-app'
         APP_IMAGE = 'gestion-station-skii:latest'
@@ -67,10 +67,7 @@ pipeline {
             steps {
                 echo '🧪 Running unit tests...'
                 sh '''
-                    mvn test \
-                        -Dspring.datasource.url=jdbc:mysql://ski-mysql:3306/${MYSQL_DB}?createDatabaseIfNotExist=true \
-                        -Dspring.datasource.username=root \
-                        -Dspring.datasource.password=
+                    mvn test -Dspring.datasource.url=jdbc:mysql://ski-mysql:3306/${MYSQL_DB}?createDatabaseIfNotExist=true
                 '''
             }
         }
