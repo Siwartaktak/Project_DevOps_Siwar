@@ -7,37 +7,28 @@ pipeline {
         APP_CONTAINER = 'ski-app'
         APP_IMAGE = 'gestion-station-skii:latest'
         GIT_URL = 'https://github.com/Siwartaktak/Project_DevOps_Siwar.git'
-        NETWORK_NAME = 'mynetwork'
+        MYSQL_PORT = '3307'
     }
 
     stages {
         stage('Checkout Git') {
             steps {
-                echo 'Cloning repository...'
+                echo '📦 Cloning repository...'
                 git branch: 'main', url: "${GIT_URL}"
-            }
-        }
-
-        stage('Setup Docker Network') {
-            steps {
-                echo 'Creating Docker network if not exists...'
-                sh '''
-                    docker network inspect ${NETWORK_NAME} >/dev/null 2>&1 || \
-                    docker network create ${NETWORK_NAME}
-                '''
             }
         }
 
         stage('Setup MySQL Container') {
             steps {
-                echo 'Setting up MySQL container...'
+                echo '🧱 Setting up MySQL container...'
                 sh '''
                     docker stop ${MYSQL_CONTAINER} 2>/dev/null || echo "MySQL container not running"
                     docker rm ${MYSQL_CONTAINER} 2>/dev/null || echo "MySQL container does not exist"
 
-                    docker run -d --name ${MYSQL_CONTAINER} --network ${NETWORK_NAME} \
+                    docker run -d --name ${MYSQL_CONTAINER} \
                         -e MYSQL_ALLOW_EMPTY_PASSWORD=yes \
                         -e MYSQL_DATABASE=${MYSQL_DB} \
+                        -p ${MYSQL_PORT}:3306 \
                         mysql:latest
 
                     echo "Waiting for MySQL to be ready..."
@@ -62,55 +53,54 @@ pipeline {
 
         stage('Maven Clean') {
             steps {
-                echo 'Running mvn clean...'
+                echo '🧹 Running mvn clean...'
                 sh 'mvn clean'
             }
         }
 
         stage('Compile') {
             steps {
-                echo 'Compiling project...'
+                echo '⚙️ Compiling project...'
                 sh 'mvn compile'
             }
         }
 
         stage('Unit Tests') {
             steps {
-                echo 'Running unit tests...'
-                // Use the container hostname within the Docker network
-                sh 'mvn test -Dspring.datasource.url=jdbc:mysql://test-mysql:3306/${MYSQL_DB}?createDatabaseIfNotExist=true'
+                echo '🧪 Running unit tests...'
+                sh 'mvn test -Dspring.datasource.url=jdbc:mysql://127.0.0.1:${MYSQL_PORT}/${MYSQL_DB}?createDatabaseIfNotExist=true'
             }
         }
 
         stage('Artifact Construction') {
             steps {
-                echo 'Building artifact...'
+                echo '📦 Building artifact...'
                 sh 'mvn package -DskipTests'
             }
         }
 
         stage('Publish to Nexus') {
             steps {
-                echo 'Deploying artifact to Nexus...'
+                echo '🚀 Deploying artifact to Nexus...'
                 sh 'mvn deploy -s settings.xml -DskipTests'
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                echo 'Building Docker image...'
+                echo '🐳 Building Docker image...'
                 sh 'docker build -t ${APP_IMAGE} .'
             }
         }
 
-        stage('Deploy Docker Image') {
+        stage('Deploy Docker Container') {
             steps {
-                echo 'Deploying Docker container...'
+                echo '🚀 Deploying Docker container...'
                 sh '''
                     docker stop ${APP_CONTAINER} 2>/dev/null || echo "Container not running"
                     docker rm ${APP_CONTAINER} 2>/dev/null || echo "Container not found"
 
-                    docker run -d --name ${APP_CONTAINER} --network ${NETWORK_NAME} \
+                    docker run -d --name ${APP_CONTAINER} \
                         -p 8089:8080 ${APP_IMAGE}
                 '''
             }
@@ -118,7 +108,7 @@ pipeline {
 
         stage('Update Kubernetes') {
             steps {
-                echo 'Updating Kubernetes deployment...'
+                echo '☸️ Updating Kubernetes deployment...'
                 sh 'kubectl apply -f k8s/'
             }
         }
@@ -126,12 +116,12 @@ pipeline {
 
     post {
         always {
-            echo 'Cleaning up MySQL container...'
+            echo '🧹 Cleaning up MySQL container...'
             sh '''
                 docker stop ${MYSQL_CONTAINER} 2>/dev/null || echo "MySQL container already stopped"
                 docker rm ${MYSQL_CONTAINER} 2>/dev/null || echo "MySQL container already removed"
             '''
-            echo 'Pipeline finished!'
+            echo '🏁 Pipeline finished!'
         }
 
         success {
