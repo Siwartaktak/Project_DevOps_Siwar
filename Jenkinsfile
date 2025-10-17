@@ -19,21 +19,29 @@ pipeline {
         }
 
         stage('Setup MySQL Container') {
-            steps {
-                echo 'Setting up MySQL container...'
-                sh '''
-                    docker stop ${MYSQL_CONTAINER} 2>/dev/null || echo "MySQL container not running"
-                    docker rm ${MYSQL_CONTAINER} 2>/dev/null || echo "MySQL container does not exist"
-                    docker run -d --name ${MYSQL_CONTAINER} \
-                        -e MYSQL_ALLOW_EMPTY_PASSWORD=yes \
-                        -e MYSQL_DATABASE=${MYSQL_DB} \
-                        -p ${MYSQL_PORT}:3306 mysql:latest
-                    echo "Waiting for MySQL to be ready..."
-                    sleep 40
-                    echo "MySQL container started and ready"
-                '''
-            }
-        }
+    steps {
+        echo 'Setting up MySQL container...'
+        sh '''
+            docker stop ${MYSQL_CONTAINER} 2>/dev/null || echo "MySQL container not running"
+            docker rm ${MYSQL_CONTAINER} 2>/dev/null || echo "MySQL container does not exist"
+            docker run -d --name ${MYSQL_CONTAINER} \
+                -e MYSQL_ALLOW_EMPTY_PASSWORD=yes \
+                -e MYSQL_DATABASE=${MYSQL_DB} \
+                -p ${MYSQL_PORT}:3306 mysql:latest
+
+            echo "Waiting for MySQL to be ready..."
+            for i in {1..30}; do
+                if docker exec ${MYSQL_CONTAINER} mysql -uroot -e "SELECT 1" &> /dev/null; then
+                    echo "✅ MySQL is ready!"
+                    break
+                fi
+                echo "⏳ Waiting for MySQL... ($i/30)"
+                sleep 5
+            done
+        '''
+    }
+}
+
 
         stage('Maven Clean') {
             steps {
