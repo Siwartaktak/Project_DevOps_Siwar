@@ -7,7 +7,6 @@ pipeline {
         APP_CONTAINER = 'ski-app'
         APP_IMAGE = 'gestion-station-skii:latest'
         GIT_URL = 'https://github.com/Siwartaktak/Project_DevOps_Siwar.git'
-        MYSQL_PORT = '3307'
     }
 
     stages {
@@ -25,10 +24,9 @@ pipeline {
                     docker stop ${MYSQL_CONTAINER} 2>/dev/null || echo "MySQL container not running"
                     docker rm ${MYSQL_CONTAINER} 2>/dev/null || echo "MySQL container does not exist"
 
-                    docker run -d --name ${MYSQL_CONTAINER} \
+                    docker run -d --name ${MYSQL_CONTAINER} --network mynetwork \
                         -e MYSQL_ALLOW_EMPTY_PASSWORD=yes \
                         -e MYSQL_DATABASE=${MYSQL_DB} \
-                        -p ${MYSQL_PORT}:3306 \
                         mysql:latest
 
                     echo "Waiting for MySQL to be ready..."
@@ -68,8 +66,12 @@ pipeline {
         stage('Unit Tests') {
             steps {
                 echo '🧪 Running unit tests...'
-                sh 'mvn test -Dspring.datasource.url=jdbc:mysql://ski-mysql:3306/${MYSQL_DB}?createDatabaseIfNotExist=true'
-
+                sh '''
+                    mvn test \
+                        -Dspring.datasource.url=jdbc:mysql://ski-mysql:3306/${MYSQL_DB}?createDatabaseIfNotExist=true \
+                        -Dspring.datasource.username=root \
+                        -Dspring.datasource.password=
+                '''
             }
         }
 
@@ -101,7 +103,7 @@ pipeline {
                     docker stop ${APP_CONTAINER} 2>/dev/null || echo "Container not running"
                     docker rm ${APP_CONTAINER} 2>/dev/null || echo "Container not found"
 
-                    docker run -d --name ${APP_CONTAINER} \
+                    docker run -d --name ${APP_CONTAINER} --network mynetwork \
                         -p 8089:8080 ${APP_IMAGE}
                 '''
             }
