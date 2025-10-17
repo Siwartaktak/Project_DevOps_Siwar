@@ -19,29 +19,35 @@ pipeline {
         }
 
         stage('Setup MySQL Container') {
-    steps {
-        echo 'Setting up MySQL container...'
-        sh '''
-            docker stop ${MYSQL_CONTAINER} 2>/dev/null || echo "MySQL container not running"
-            docker rm ${MYSQL_CONTAINER} 2>/dev/null || echo "MySQL container does not exist"
-            docker run -d --name ${MYSQL_CONTAINER} \
-                -e MYSQL_ALLOW_EMPTY_PASSWORD=yes \
-                -e MYSQL_DATABASE=${MYSQL_DB} \
-                -p ${MYSQL_PORT}:3306 mysql:latest
+            steps {
+                echo 'Setting up MySQL container...'
+                sh '''
+                    docker stop ${MYSQL_CONTAINER} 2>/dev/null || echo "MySQL container not running"
+                    docker rm ${MYSQL_CONTAINER} 2>/dev/null || echo "MySQL container does not exist"
+                    docker run -d --name ${MYSQL_CONTAINER} \
+                        -e MYSQL_ALLOW_EMPTY_PASSWORD=yes \
+                        -e MYSQL_DATABASE=${MYSQL_DB} \
+                        -p ${MYSQL_PORT}:3306 mysql:latest
 
-            echo "Waiting for MySQL to be ready..."
-            for i in {1..30}; do
-                if docker exec ${MYSQL_CONTAINER} mysql -uroot -e "SELECT 1" &> /dev/null; then
-                    echo "✅ MySQL is ready!"
-                    break
-                fi
-                echo "⏳ Waiting for MySQL... ($i/30)"
-                sleep 5
-            done
-        '''
-    }
-}
+                    echo "Waiting for MySQL to be ready..."
+                    MAX_ATTEMPTS=30
+                    for i in $(seq 1 $MAX_ATTEMPTS); do
+                        if docker exec ${MYSQL_CONTAINER} mysql -h127.0.0.1 -uroot -e "SELECT 1" &> /dev/null; then
+                            echo "✅ MySQL is ready after $i attempts!"
+                            break
+                        fi
+                        echo "⏳ Waiting for MySQL to start... ($i/$MAX_ATTEMPTS)"
+                        sleep 5
+                    done
 
+                    if ! docker exec ${MYSQL_CONTAINER} mysql -h127.0.0.1 -uroot -e "SELECT 1" &> /dev/null; then
+                        echo "❌ MySQL did not become ready in time."
+                        docker logs ${MYSQL_CONTAINER}
+                        exit 1
+                    fi
+                '''
+            }
+        }
 
         stage('Maven Clean') {
             steps {
@@ -60,7 +66,8 @@ pipeline {
         stage('Unit Tests') {
             steps {
                 echo 'Running unit tests...'
-                sh 'mvn test -Dspring.datasource.url=jdbc:mysql://localhost:${MYSQL_PORT}/${MYSQL_DB}?createDatabaseIfNotExist=true'
+                // Use explicit localhost:3307 for the test DB URL
+                sh 'mvn test -Dspring.datasource.url=jdbc:mysql://127.0.0.1:${MYSQL_PORT}/${MYSQL_DB}?createDatabaseIfNotExist=true'
             }
         }
 
@@ -123,4 +130,3 @@ pipeline {
         }
     }
 }
-
