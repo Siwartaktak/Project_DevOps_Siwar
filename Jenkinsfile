@@ -121,15 +121,13 @@ pipeline {
         }
 
         stage('Update Kubernetes') {
-            steps {
-                script {
-                    sh 'kubectl apply -f k8s/deployment.yaml'
-                    sh 'kubectl rollout status deployment/your-app-deployment'
+    steps {
+        script {
+            sh 'kubectl apply -f k8s/deployment.yaml'
+            sh 'kubectl rollout status deployment/your-app-deployment'
         }
-        }
-    
-
     }
+}
 
     post {
         always {
