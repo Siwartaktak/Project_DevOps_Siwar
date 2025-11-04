@@ -64,7 +64,7 @@ stages {
     stage('Unit Tests') {
         steps {
             echo '🧪 Running unit tests...'
-            bat 'mvn test -Dspring.datasource.url=jdbc:mysql://ski-mysql:3306/%MYSQL_DB%?createDatabaseIfNotExist=true'
+            bat 'mvn test -Dspring.datasource.url=jdbc:mysql://localhost:3306/%MYSQL_DB%?createDatabaseIfNotExist=true'
         }
     }
 
