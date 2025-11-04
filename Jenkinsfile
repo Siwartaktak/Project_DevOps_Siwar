@@ -47,6 +47,7 @@ echo ❌ MySQL not ready after 30 attempts!
 exit /b 1
 :ready
 
+
                 docker logs %MYSQL_CONTAINER%
             """
         }
