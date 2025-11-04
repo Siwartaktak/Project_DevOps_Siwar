@@ -34,14 +34,19 @@ stages {
                     mysql:latest
 
                 echo Waiting for MySQL to be ready...
-                for /L %%i in (1,1,30) do (
-                    docker exec %MYSQL_CONTAINER% mysqladmin ping -h"127.0.0.1" >nul 2>&1 && (
-                        echo ✅ MySQL is ready after %%i attempts!
-                        exit /b 0
-                    )
-                    echo ⏳ Waiting... %%i/30
-                    timeout /t 5 >nul
-                )
+for /L %%i in (1,1,30) do (
+    docker exec %MYSQL_CONTAINER% mysqladmin ping -h"127.0.0.1" -uroot >nul 2>&1
+    if not errorlevel 1 (
+        echo ✅ MySQL is ready after %%i attempts!
+        goto :ready
+    )
+    echo ⏳ Waiting... %%i/30
+    timeout /t 5 >nul
+)
+echo ❌ MySQL not ready after 30 attempts!
+exit /b 1
+:ready
+
                 docker logs %MYSQL_CONTAINER%
             """
         }
