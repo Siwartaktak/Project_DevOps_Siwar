@@ -1,11 +1,11 @@
 pipeline {
-agent {
-docker {
-image 'docker:24.0.6-cli' // Docker CLI image
-args '-v /var/run/docker.sock:/var/run/docker.sock -v $HOME/.m2:/root/.m2' // Mount Docker socket and Maven cache
-}
-}
-
+    agent {
+        docker {
+            image 'docker:24.0.6-dind' // DinD image includes Docker CLI + daemon
+            args '-v /var/run/docker.sock:/var/run/docker.sock -v $HOME/.m2:/root/.m2'
+        }
+    }
+    
 ```
 environment {
     MYSQL_CONTAINER = 'ski-mysql'
