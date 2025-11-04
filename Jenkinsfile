@@ -70,7 +70,7 @@ exit /b 1
     stage('Unit Tests') {
         steps {
             echo '🧪 Running unit tests...'
-            bat 'mvn test -Dspring.datasource.url=jdbc:mysql://localhost:3307/%MYSQL_DB%?createDatabaseIfNotExist=true -Dspring.datasource.username=root -Dspring.datasource.password='
+            bat 'mvn test -Dspring-boot.run.arguments="--spring.datasource.url=jdbc:mysql://localhost:3307/%MYSQL_DB% --spring.datasource.username=root --spring.datasource.password="'
         }
     }
 
