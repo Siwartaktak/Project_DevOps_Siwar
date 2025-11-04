@@ -1,7 +1,7 @@
 pipeline {
 agent any
 
-```
+
 environment {
     MYSQL_CONTAINER = 'ski-mysql'
     MYSQL_DB = 'skidb'
@@ -139,6 +139,6 @@ post {
         echo '❌ Pipeline failed!'
     }
 }
-```
+
 
 }
