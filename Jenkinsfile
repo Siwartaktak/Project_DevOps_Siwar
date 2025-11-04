@@ -124,7 +124,7 @@ pipeline {
             steps {
                 script {
                     sh 'kubectl apply -f k8s/deployment.yaml'
-            sh 'kubectl rollout status deployment/your-app-deployment'
+                    sh 'kubectl rollout status deployment/your-app-deployment'
         }
         }
     
