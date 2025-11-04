@@ -1,6 +1,7 @@
 pipeline {
 agent any
 
+```
 environment {
     MYSQL_CONTAINER = 'ski-mysql'
     MYSQL_DB = 'skidb'
@@ -122,14 +123,12 @@ stages {
 
 post {
     always {
-        node {
-            echo '🧹 Cleaning up MySQL container...'
-            bat """
-                docker stop %MYSQL_CONTAINER% 2>nul || echo MySQL container already stopped
-                docker rm %MYSQL_CONTAINER% 2>nul || echo MySQL container already removed
-            """
-            echo '🏁 Pipeline finished!'
-        }
+        echo '🧹 Cleaning up MySQL container...'
+        bat """
+            docker stop %MYSQL_CONTAINER% 2>nul || echo MySQL container already stopped
+            docker rm %MYSQL_CONTAINER% 2>nul || echo MySQL container already removed
+        """
+        echo '🏁 Pipeline finished!'
     }
 
     success {
@@ -140,6 +139,6 @@ post {
         echo '❌ Pipeline failed!'
     }
 }
-
+```
 
 }
